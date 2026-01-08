@@ -91,13 +91,19 @@ class FundServiceTest {
         ArgumentCaptor<List<FundEntity>> entityCaptor =
                 ArgumentCaptor.forClass(List.class);
 
-        verify(fundRepository, times(1)).saveAll(entityCaptor.capture());
-        verify(fundSearchRepository, times(1)).saveAll(anyList());
+        verify(fundRepository, atLeastOnce()).saveAll(entityCaptor.capture());
 
-        List<FundEntity> savedFunds = entityCaptor.getValue();
+        verify(fundSearchRepository, atLeastOnce()).saveAll(anyList());
 
-        assertThat(savedFunds).isNotEmpty();
-        assertThat(savedFunds)
+        List<List<FundEntity>> allBatches = entityCaptor.getAllValues();
+
+        List<FundEntity> allSavedFunds = allBatches.stream()
+                .flatMap(List::stream)
+                .toList();
+
+        assertThat(allSavedFunds).isNotEmpty();
+
+        assertThat(allSavedFunds)
                 .extracting(FundEntity::getFundCode)
                 .contains("DLZ", "UHS");
     }

@@ -38,7 +38,7 @@ public class FundService {
     private static final String STARTUP_DATA_PATH = "/data/funds_data.xlsx";
     private static final int DATA_START_ROW = 2;
     private static final int SCALE_PRECISION = 4;
-
+    private static final int BATCH_SIZE = 500;
 
     /**
      * Processes an uploaded Excel file containing fund data.
@@ -103,7 +103,7 @@ public class FundService {
             }
 
             if (!fundList.isEmpty()) {
-                this.saveAndSyncFunds(fundList);
+                this.saveAndSyncFundsInBatches(fundList);
             } else {
                 log.warn("No valid fund data found in the Excel file.");
             }
@@ -122,13 +122,29 @@ public class FundService {
     }
 
     /**
-     * Persists the list of funds to the database and synchronizes them with Elasticsearch.
+     * Saves and synchronizes a list of FundEntity objects in batches. This method processes
+     * the provided list in chunks of a predefined batch size. Each batch is first saved to
+     * the database and then synchronized to Elasticsearch.
+     *
+     * @param fundList the list of FundEntity objects to be processed in batches
      */
-    private void saveAndSyncFunds(List<FundEntity> fundList) {
-        List<FundEntity> savedFunds = fundRepository.saveAll(fundList);
-        log.info("Database: {} funds saved/updated.", savedFunds.size());
-        this.syncToElasticsearch(savedFunds);
+    private void saveAndSyncFundsInBatches(List<FundEntity> fundList) {
+        int totalSize = fundList.size();
+        log.info("Starting batch processing for {} records...", totalSize);
+
+        for (int i = 0; i < totalSize; i += BATCH_SIZE) {
+            int end = Math.min(totalSize, i + BATCH_SIZE);
+            List<FundEntity> batch = fundList.subList(i, end);
+
+            // 1. DB Save
+            List<FundEntity> savedBatch = fundRepository.saveAll(batch);
+
+            // 2. Elasticsearch Sync
+            syncToElasticsearch(savedBatch);
+        }
+        log.info("Batch processing completed.");
     }
+
 
     /**
      * Synchronizes a list of FundEntity objects to Elasticsearch by mapping them to FundDocument
@@ -137,11 +153,17 @@ public class FundService {
      * @param funds the list of FundEntity objects to be synchronized with Elasticsearch
      */
     private void syncToElasticsearch(List<FundEntity> funds) {
-        List<FundDocument> documents = funds.stream()
-                .map(this::mapToDocument)
-                .toList();
-        fundSearchRepository.saveAll(documents);
-        log.info("Elasticsearch: Synced {} documents.", documents.size());
+        try {
+            List<FundDocument> documents = funds.stream()
+                    .map(this::mapToDocument)
+                    .toList();
+
+            fundSearchRepository.saveAll(documents);
+            log.info("Elasticsearch: Synced batch of {} documents.", documents.size());
+
+        } catch (Exception e) {
+            log.error("Failed to sync batch to Elasticsearch. Count: {}. Error: {}", funds.size(), e.getMessage());
+        }
     }
 
     /**
