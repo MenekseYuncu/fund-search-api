@@ -45,9 +45,6 @@ public class FundController {
      */
     @PostMapping("/upload")
     public ResponseEntity<String> uploadExcelFile(@RequestParam("file") MultipartFile file) {
-        if (file.isEmpty()) {
-            return ResponseEntity.badRequest().body("Please select a valid Excel file.");
-        }
 
         fundService.importFundsFromExcel(file);
 

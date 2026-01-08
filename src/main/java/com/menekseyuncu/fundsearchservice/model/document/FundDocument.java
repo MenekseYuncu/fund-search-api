@@ -13,7 +13,7 @@ import java.math.BigDecimal;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Document(indexName = "funds")
+@Document(indexName = "fund")
 public class FundDocument {
 
     @Id
