@@ -41,7 +41,8 @@ class FundSearchServiceTest {
         request = new FundSearchRequest();
 
         FundSearchRequest.Filter filter = new FundSearchRequest.Filter();
-        filter.setQuery("DLZ");
+        filter.setFundCode("DLZ");
+        filter.setFundName("DENİZ");
         filter.setUmbrellaType("Serbest Şemsiye Fonu");
         filter.setMinReturn1Year(BigDecimal.valueOf(157.50));
 
@@ -65,8 +66,6 @@ class FundSearchServiceTest {
                 .return6Month(new BigDecimal("-6.8773"))
                 .returnYtd(new BigDecimal("156.7887"))
                 .return1Year(new BigDecimal("157.8626"))
-                .return3Year(null)
-                .return5Year(null)
                 .build();
 
         SearchHit<FundDocument> searchHit = mock(SearchHit.class);
@@ -85,6 +84,7 @@ class FundSearchServiceTest {
         // then
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getFundCode()).isEqualTo("DLZ");
+        assertThat(result.get(0).getUmbrellaType()).isEqualTo("Serbest Şemsiye Fonu");
 
         verify(elasticsearchOperations, times(1))
                 .search(any(Query.class), eq(FundDocument.class));

@@ -80,14 +80,14 @@ public class FundSearchRequest {
             // --- TEXT SEARCH ---
             if (filter.getFundName() != null && !filter.getFundName().isBlank()) {
                 criteria = criteria.and(
-                        new Criteria("fundName").contains(filter.getFundName())
+                        new Criteria("fundName").matches(filter.getFundName())
                 );
             }
 
             // --- TEXT SEARCH ---
             if (filter.getUmbrellaType() != null && !filter.getUmbrellaType().isBlank()) {
                 criteria = criteria.and(
-                        new Criteria("umbrellaType").contains(filter.getUmbrellaType())
+                        new Criteria("umbrellaType").matches(filter.getUmbrellaType())
                 );
             }
 
