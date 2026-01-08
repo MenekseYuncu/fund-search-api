@@ -1,6 +1,7 @@
 package com.menekseyuncu.fundsearchservice.service;
 
 import com.menekseyuncu.fundsearchservice.controller.request.FundSearchRequest;
+import com.menekseyuncu.fundsearchservice.exception.SearchOperationException;
 import com.menekseyuncu.fundsearchservice.model.document.FundDocument;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,20 +34,29 @@ public class FundSearchService {
      * @throws IllegalArgumentException if the request object is null.
      */
     public List<FundDocument> searchFunds(FundSearchRequest request) {
+        if (request == null) {
+            throw new IllegalArgumentException("Search request cannot be null.");
+        }
 
-        Query query = request.toElasticsearchQuery();
+        try {
+            Query query = request.toElasticsearchQuery();
+            log.debug("Executing Elasticsearch query: {}", query.toString());
 
-        SearchHits<FundDocument> searchHits = elasticsearchOperations.search(query, FundDocument.class);
+            SearchHits<FundDocument> searchHits = elasticsearchOperations.search(query, FundDocument.class);
 
-        if (searchHits.hasSearchHits()) {
-            log.info("Search completed successfully. Found {} funds.", searchHits.getTotalHits());
+            if (searchHits.hasSearchHits()) {
+                log.info("Search completed successfully. Found {} funds.", searchHits.getTotalHits());
+                return searchHits.stream()
+                        .map(SearchHit::getContent)
+                        .collect(Collectors.toList());
+            } else {
+                log.info("Search completed. No funds found matching the criteria.");
+                return Collections.emptyList();
+            }
 
-            return searchHits.stream()
-                    .map(SearchHit::getContent)
-                    .collect(Collectors.toList());
-        } else {
-            log.info("Search completed. No funds found matching the criteria.");
-            return Collections.emptyList();
+        } catch (Exception e) {
+            log.error("Elasticsearch search operation failed: {}", e.getMessage(), e);
+            throw new SearchOperationException("Failed to execute search operation", e);
         }
     }
 }

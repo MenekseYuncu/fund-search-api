@@ -1,6 +1,7 @@
 package com.menekseyuncu.fundsearchservice.service;
 
 import com.menekseyuncu.fundsearchservice.controller.request.FundSearchRequest;
+import com.menekseyuncu.fundsearchservice.exception.SearchOperationException;
 import com.menekseyuncu.fundsearchservice.model.document.FundDocument;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -18,9 +19,11 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
+
 
 @ExtendWith(MockitoExtension.class)
 class FundSearchServiceTest {
@@ -43,7 +46,7 @@ class FundSearchServiceTest {
         FundSearchRequest.Filter filter = new FundSearchRequest.Filter();
         filter.setFundCode("DLZ");
         filter.setFundName("DENİZ");
-        filter.setUmbrellaType("Serbest Şemsiye Fonu");
+        filter.setUmbrellaType("Şemsiye");
         filter.setMinReturn1Year(BigDecimal.valueOf(157.50));
 
         FundSearchRequest.Pagination pagination = new FundSearchRequest.Pagination();
@@ -107,4 +110,43 @@ class FundSearchServiceTest {
         verify(elasticsearchOperations, times(1))
                 .search(any(Query.class), eq(FundDocument.class));
     }
+
+    @Test
+    void searchFunds_shouldBuildQueryFromRequest() {
+        //given
+        FundSearchRequest spyRequest = spy(request);
+
+        // when
+        when(elasticsearchOperations.search(any(Query.class), eq(FundDocument.class)))
+                .thenReturn(searchHits);
+        when(searchHits.hasSearchHits()).thenReturn(false);
+
+        //then
+        fundSearchService.searchFunds(spyRequest);
+
+        verify(spyRequest, times(1)).toElasticsearchQuery();
+    }
+
+    @Test
+    void searchFunds_shouldThrowIllegalArgumentException_whenRequestIsNull() {
+        // when & then
+        assertThatThrownBy(() -> fundSearchService.searchFunds(null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Search request cannot be null.");
+
+        verifyNoInteractions(elasticsearchOperations);
+    }
+
+    @Test
+    void searchFunds_shouldThrowSearchOperationException_whenElasticsearchFails() {
+        when(elasticsearchOperations.search(any(Query.class), eq(FundDocument.class)))
+                .thenThrow(new RuntimeException("ES down"));
+
+        assertThatThrownBy(() -> fundSearchService.searchFunds(request))
+                .isInstanceOf(SearchOperationException.class)
+                .hasMessage("Failed to execute search operation")
+                .hasCauseInstanceOf(RuntimeException.class)
+                .hasRootCauseMessage("ES down");
+    }
+
 }

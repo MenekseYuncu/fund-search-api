@@ -48,21 +48,17 @@ public class FundSearchRequest {
 
 
     /**
-     * Converts the current search request into an Elasticsearch Query object,
-     * applying various filters, text search, exact matches, and range queries
-     * based on the provided filter criteria. Pagination and sorting are also
-     * applied if specified.
-     * <p>
-     * The method constructs a query dynamically based on the following conditions:
-     * - If a query string is provided, it performs a text search on the `fundName` and `fundCode` fields.
-     * - If an umbrella type is specified, it performs an exact match on the `umbrellaType` field.
-     * - If a range for `return1Year` is defined, it includes range queries to filter results based on
-     *   the specified minimum and/or maximum values.
-     * - Ensures null-safety by evaluating each filter condition only if its value is non-null or non-blank.
-     * <p>
-     * Pagination and sorting settings are determined using the `toPageable()` helper method.
+     * Converts the filter criteria, pagination, and sorting settings into an Elasticsearch {@link Query}.
+     * The method dynamically constructs a query using the provided filter values. It supports:
+     * <ul>
+     * - Exact matches (e.g., fundCode).
+     * - Text-based search for fields (e.g., fundName and umbrellaType).
+     * - Range queries for numeric fields (e.g., return1Year).
+     * </ul>
+     * Returns a {@link Query} object configured with the constructed criteria, along with any pagination
+     * and sorting settings derived using {@link #toPageable()}.
      *
-     * @return The generated Elasticsearch Query object encapsulating all filter, pagination, and sorting criteria.
+     * @return A {@link Query} object containing the search criteria, pagination, and sorting details.
      */
     public Query toElasticsearchQuery() {
 
@@ -87,7 +83,7 @@ public class FundSearchRequest {
             // --- TEXT SEARCH ---
             if (filter.getUmbrellaType() != null && !filter.getUmbrellaType().isBlank()) {
                 criteria = criteria.and(
-                        new Criteria("umbrellaType").matches(filter.getUmbrellaType())
+                        new Criteria("umbrellaType").contains(filter.getUmbrellaType())
                 );
             }
 

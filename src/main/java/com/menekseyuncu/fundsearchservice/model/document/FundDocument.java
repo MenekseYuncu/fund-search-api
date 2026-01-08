@@ -23,7 +23,7 @@ public class FundDocument {
     @Field(type = FieldType.Text, analyzer = "standard")
     private String fundName;
 
-    @Field(type = FieldType.Keyword)
+    @Field(type = FieldType.Text)
     private String umbrellaType;
 
     @Field(type = FieldType.Scaled_Float)
