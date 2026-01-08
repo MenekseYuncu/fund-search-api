@@ -5,6 +5,7 @@ import com.menekseyuncu.fundsearchservice.exception.SearchOperationException;
 import com.menekseyuncu.fundsearchservice.model.document.FundDocument;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.data.elasticsearch.core.SearchHits;
@@ -33,6 +34,7 @@ public class FundSearchService {
      * @return A list of {@link FundDocument} matching the search criteria. Returns an empty list if no matches are found.
      * @throws IllegalArgumentException if the request object is null.
      */
+    @Cacheable(value = "fund_searches", key = "#request.toString()")
     public List<FundDocument> searchFunds(FundSearchRequest request) {
         if (request == null) {
             throw new IllegalArgumentException("Search request cannot be null.");

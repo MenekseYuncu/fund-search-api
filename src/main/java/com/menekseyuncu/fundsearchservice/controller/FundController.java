@@ -50,4 +50,30 @@ public class FundController {
 
         return ResponseEntity.ok("File processed successfully. Database and Elasticsearch have been updated.");
     }
+
+    /**
+     * Triggers a full re-indexing of data from PostgreSQL to Elasticsearch
+     * and invalidates the cache to ensure data consistency.
+     *
+     * @return Response indicating that the synchronization process has started.
+     */
+    @PostMapping("/sync")
+    public ResponseEntity<String> syncIndex() {
+        fundService.fullSyncToElasticsearch();
+        fundService.clearCache();
+
+        return ResponseEntity.ok("Full synchronization started and cache cleared.");
+    }
+
+    /**
+     * Manually clears all search result caches.
+     * Useful for forcing fresh data retrieval when the underlying data has changed.
+     *
+     * @return Response indicating that the cache has been cleared.
+     */
+    @PostMapping("/cache/clear")
+    public ResponseEntity<String> clearCache() {
+        fundService.clearCache();
+        return ResponseEntity.ok("Cache cleared successfully.");
+    }
 }

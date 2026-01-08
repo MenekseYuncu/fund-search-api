@@ -4,12 +4,13 @@ import com.menekseyuncu.fundsearchservice.model.document.FundDocument;
 import com.menekseyuncu.fundsearchservice.model.entity.FundEntity;
 import com.menekseyuncu.fundsearchservice.repository.FundRepository;
 import com.menekseyuncu.fundsearchservice.repository.FundSearchRepository;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.NumberToTextConverter;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -285,5 +286,41 @@ public class FundService {
             cleanValue = cleanValue.replace(",", ".");
         }
         return cleanValue;
+    }
+
+    /**
+     * Performs a full synchronization of fund data from the database to Elasticsearch.
+     * <p>
+     * This method:
+     * 1. Fetches all fund entities from the relational database (PostgreSQL).
+     * 2. Clears the existing Elasticsearch index completely to avoid duplicates or stale data.
+     * 3. Re-indexes the data in batches using the existing batch processing logic.
+     * <p>
+     * This is useful for disaster recovery or restoring data consistency.
+     */
+    @Transactional(readOnly = true)
+    public void fullSyncToElasticsearch() {
+        log.info("Full Sync started..");
+
+        List<FundEntity> allFunds = fundRepository.findAll();
+
+        if (allFunds.isEmpty()) return;
+
+        fundSearchRepository.deleteAll();
+
+        this.saveAndSyncFundsInBatches(allFunds);
+
+        log.info("Full Sync completed.");
+    }
+
+    /**
+     * Evicts all entries from the 'fund_searches' cache.
+     * <p>
+     * This forces the system to fetch fresh data from the backend/Elasticsearch
+     * on the next search request, ensuring users see the most up-to-date information.
+     */
+    @CacheEvict(value = "fund_searches", allEntries = true)
+    public void clearCache() {
+        log.info("Cache cleared successfully.");
     }
 }
