@@ -38,7 +38,8 @@ public class FundSearchRequest {
     @Getter
     @Setter
     public static class Filter {
-        private String query;
+        private String fundCode;
+        private String fundName;
         private String umbrellaType;
 
         private BigDecimal minReturn1Year;
@@ -69,18 +70,24 @@ public class FundSearchRequest {
 
         if (filter != null) {
 
-            // --- TEXT SEARCH ---
-            if (filter.getQuery() != null && !filter.getQuery().isBlank()) {
-                Criteria textCriteria =
-                        new Criteria("fundName").contains(filter.getQuery())
-                                .or(new Criteria("fundCode").is(filter.getQuery()));
-                criteria = criteria.and(textCriteria);
+            // --- EXACT MATCH ---
+            if (filter.getFundCode() != null && !filter.getFundCode().isBlank()) {
+                criteria = criteria.and(
+                        new Criteria("fundCode").is(filter.getFundCode())
+                );
             }
 
-            // --- EXACT MATCH ---
+            // --- TEXT SEARCH ---
+            if (filter.getFundName() != null && !filter.getFundName().isBlank()) {
+                criteria = criteria.and(
+                        new Criteria("fundName").contains(filter.getFundName())
+                );
+            }
+
+            // --- TEXT SEARCH ---
             if (filter.getUmbrellaType() != null && !filter.getUmbrellaType().isBlank()) {
                 criteria = criteria.and(
-                        new Criteria("umbrellaType").is(filter.getUmbrellaType())
+                        new Criteria("umbrellaType").contains(filter.getUmbrellaType())
                 );
             }
 
