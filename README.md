@@ -68,6 +68,11 @@ The project includes a `docker-compose.yml` file to spin up the database, search
 
 ## 📡 API Documentation
 
+The API is fully documented using Postman. You can view the collection, example requests, and payloads online or import them directly into your Postman Workspace.
+
+* **Direct Link:** [View Postman Collection](https://www.postman.com/menekse-3683/workspace/fund-search-api/collection/24190370-e2dafa27-78ba-4f25-b7f8-2c53e64259c1?action=share&creator=24190370)
+
+  
 ### 1. Search Funds (Advanced)
 Performs a search with pagination, filtering, and sorting.
 
